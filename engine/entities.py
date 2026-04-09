@@ -37,6 +37,7 @@ class Player(LivingEntity):
         self.sprite_down = pygame.Surface((width, height))
         self.sprite_left = pygame.Surface((width, height))
         self.sprite_right = pygame.Surface((width, height))
+        # For now we just fill the sprites with different colors, but eventually we will want to load actual images here
         self.sprite_up.fill((127, 127, 0))
         self.sprite_down.fill((0, 255, 0))
         self.sprite_left.fill((0, 255, 255))

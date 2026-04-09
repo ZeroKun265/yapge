@@ -4,7 +4,7 @@ from .entities import Entity
 class Tile:
     def __init__(self, tile_type: str, color: tuple[int, int, int] = (255, 255, 255), size: int = 32, width: int = 1, height: int = 1, bounding_box_str: str = ""):
         self.tile_type = tile_type
-        self.color = color
+        self.color = color # placeholder for now but also could be used for debug visualizations or stuff
         self.surface = pygame.Surface((width * size, height * size))
         self.surface.fill(color)
         self.size = size
@@ -73,7 +73,7 @@ class TileMap:
         return f"TileMap(w {self.width}, h {self.height}, n {self.name})"
 
 
-class TileMapGenerator:
+class TileMapGenerator: # this could have probably been a function instead of a class but i really got into the Java mindset lol
     def __init__(self, resource_path: str):
         self.resource_path = resource_path
 
@@ -113,7 +113,6 @@ class TileMapGenerator:
                 tile_bounding_boxes[symbol] = bounding_box_str
                 print(f"Set bounding box for symbol {symbol} to {bounding_box_str}")
                 non_data_lines += 1
-
             else:
                 # We are at the tilemap data
                 for i, char in enumerate(line):
@@ -125,7 +124,7 @@ class TileMapGenerator:
         return tilemap
 
 
-class Layer:
+class Layer: #realistically could just move z_index into the TileMap class and not have a separate Layer class but yeah, maybe in the future this could serve as filters for physics processing or something, who knows
     def __init__(self, z_index: int, tilemap: TileMap = TileMap(0, 0)):
         self.z_index = z_index
         self.tilemap: TileMap = tilemap
