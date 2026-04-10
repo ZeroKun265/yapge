@@ -47,7 +47,7 @@ def main():
 
         world.move_entity(player, velocity[0], velocity[1])  # Move the player based on velocity
 
-        camera.set_target(player, centered = True)  # Set the camera's target to the player
+        camera.set_target(player, easing=True, centered=True, easing_speed=0.08, max_offset=150)  # Set the camera's target to the player
 
         camera.render(screen)  # Render the camera's view of the world
         pygame.display.flip()  # Update the display
