@@ -1,4 +1,4 @@
-from .map import World, Layer, SimpleBoundingBox, ComplexBoundingBox
+from .map import World, Layer, ComplexBoundingBox
 import pygame
 from .entities import Entity
 from functools import singledispatchmethod
