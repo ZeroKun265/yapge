@@ -1,4 +1,4 @@
-from .map import World, Layer
+from .map import World, Layer, SimpleBoundingBox, ComplexBoundingBox
 import pygame
 from .entities import Entity
 from functools import singledispatchmethod
@@ -103,7 +103,11 @@ class Camera:
                         # In this case we check if the tile has a bounding box and if it does we draw it in red
                         if tile.bounding_box:
                             bounding_box = tile.bounding_box
-                            pygame.draw.rect(screen, (255, 0, 0), (x * tile.size + bounding_box.x - self.x, y * tile.size + bounding_box.y - self.y, bounding_box.width, bounding_box.height), 1)
+                            if isinstance(bounding_box, ComplexBoundingBox):
+                                for box in bounding_box.bounding_boxes:
+                                    pygame.draw.rect(screen, box.color, (x * tile.size + box.rect.x - self.x, y * tile.size + box.rect.y - self.y, box.rect.width, box.rect.height), 1)
+                            else:
+                                pygame.draw.rect(screen, bounding_box.color, (x * tile.size + bounding_box.rect.x - self.x, y * tile.size + bounding_box.rect.y - self.y, bounding_box.rect.width, bounding_box.rect.height), 1)
 
     def __repr__(self):
         return f"Camera(x {self.x}, y {self.y}, zoom {self.zoom}, width {self.width}, height {self.height})"

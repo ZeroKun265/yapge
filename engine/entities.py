@@ -1,3 +1,5 @@
+from typing import Any
+
 from .inventory import Item
 import pygame
 
@@ -11,10 +13,15 @@ class Entity:
         self.height = height
         self.current_sprite = pygame.Surface((width, height))
         self.current_sprite.fill((255, 0, 255))
+        self.metadata: dict[str, Any] = {}
 
+    
 
     def __repr__(self):
-        return f"Entity({self.name}, {self.x}, {self.y})"
+        return f"Entity({self.name}, {self.x}, {self.y}))"
+    
+    def print_metadata(self):
+        print(self.metadata)
     
     def pvt_move(self, dx: int, dy: int):
         self.x += dx
@@ -24,6 +31,7 @@ class LivingEntity(Entity):
     def __init__(self, name: str, x: int, y: int, z_index: int, width: int = 32, height: int = 32, health: int = 100):
         super().__init__(name, x, y, z_index, width, height)
         self.health = health
+        self.velocity: list[int] = [0, 0]
 
     def __repr__(self):
         return f"LivingEntity({self.name}, {self.x}, {self.y}, {self.health})"
