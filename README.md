@@ -11,3 +11,11 @@ This is more a learning opportunity  for me to play around with large codebases,
 ##  TODO
 - Hitbox resource
 - Check collision entity-entity
+- window creation and other boilerplate simplification
+
+
+## Projects
+In order to test the usability of the engine, especially at the begining of development, at some points the versions will be freezed as releases and used to develop some test apps or games, here are the list of them
+### PONG!
+Not yet completed, needed to complete it:
+- Entity to Entity collision with custom func calling (like box)
