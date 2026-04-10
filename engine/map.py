@@ -10,7 +10,6 @@ class SimpleBoundingBox:
         self.collide_function: Callable[[Entity, 'Tile', str, tuple[int, int], 'SimpleBoundingBox'], None] | None = None
 
     def on_collide(self, func: Callable[[Entity, 'Tile', str, tuple[int, int], 'SimpleBoundingBox'], None]):
-        """Decorator to set the collision function."""
         self.collide_function = func
         return func
 
