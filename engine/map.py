@@ -1,5 +1,5 @@
 import pygame
-from typing import Callable, Any
+from typing import Callable
 from .entities import Entity, LivingEntity
 
 class SimpleBoundingBox:
@@ -269,4 +269,4 @@ class World:
             for other in self.entities:
                 if other is entity:
                     continue
-                entity_collisions = entity.check_entity_collision(other)
+                entity_collisions = entity.check_entity_collision(other) #type: ignore
