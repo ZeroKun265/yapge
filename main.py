@@ -1,4 +1,4 @@
-import engine
+import src.engine as engine
 import pygame
 pygame.init()
 

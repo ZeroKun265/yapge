@@ -1,22 +1,22 @@
 import pygame
 from typing import Callable
-from .entities import Entity, LivingEntity
+from . import entities
 
 class SimpleBoundingBox:
     def __init__(self, x: int, y: int, width: int, height: int, id: int = 0, color: tuple[int, int, int] = (255, 0, 0)):
         self.rect = pygame.Rect(x, y, width, height)
         self.id = id
         self.color = color
-        self.collide_function: Callable[[Entity, 'Tile', str, tuple[int, int], 'SimpleBoundingBox'], None] | None = None
+        self.collide_function: Callable[[entities.Entity, 'Tile', str, tuple[int, int], 'SimpleBoundingBox'], None] | None = None
 
-    def on_collide(self, func: Callable[[Entity, 'Tile', str, tuple[int, int], 'SimpleBoundingBox'], None]):
+    def on_collide(self, func: Callable[[entities.Entity, 'Tile', str, tuple[int, int], 'SimpleBoundingBox'], None]):
         self.collide_function = func
         return func
 
-    def set_collide_function(self, func: Callable[[Entity, 'Tile', str, tuple[int, int], 'SimpleBoundingBox'], None]):
+    def set_collide_function(self, func: Callable[[entities.Entity, 'Tile', str, tuple[int, int], 'SimpleBoundingBox'], None]):
         self.collide_function = func
 
-    def check_collision(self, entity: Entity, tile: 'Tile', tile_position: tuple[int, int] = (0, 0), move_type:str = "hor"):
+    def check_collision(self, entity: entities.Entity, tile: 'Tile', tile_position: tuple[int, int] = (0, 0), move_type:str = "hor"):
         new_self_rect = self.rect.move(tile_position[0] * tile.size, tile_position[1] * tile.size)
         collided, hitbox = entity.is_colliding_with_tile_rect(new_self_rect)
         if collided and hitbox:
@@ -42,7 +42,7 @@ class ComplexBoundingBox(SimpleBoundingBox):
     def __init__(self, bounding_boxes: list[SimpleBoundingBox] = []):
         self.bounding_boxes = bounding_boxes
 
-    def check_collision(self, entity: Entity, tile: 'Tile', tile_position: tuple[int, int] = (0, 0), move_type:str = "hor"):
+    def check_collision(self, entity: entities.Entity, tile: 'Tile', tile_position: tuple[int, int] = (0, 0), move_type:str = "hor"):
         for box in self.bounding_boxes:
             if box.check_collision(entity, tile, tile_position, move_type):
                 return True
@@ -226,7 +226,7 @@ class Layer: #realistically could just move z_index into the TileMap class and n
 class World:
     def __init__(self):
         self.layers: list[Layer] = []
-        self.entities: list[Entity] = []
+        self.entities: list[entities.Entity] = []
 
     def add_layer(self, layer: Layer):
         self.layers.append(layer)
@@ -234,8 +234,8 @@ class World:
     def remove_layer(self, layer: Layer):
         self.layers.remove(layer)
     
-    def move_entity(self, entity: Entity, dx: int = 0, dy: int = 0, no_collide: bool = False, use_entity_velocity:bool = True) -> None:
-        if isinstance(entity, LivingEntity) and use_entity_velocity:
+    def move_entity(self, entity: entities.Entity, dx: int = 0, dy: int = 0, no_collide: bool = False, use_entity_velocity:bool = True) -> None:
+        if isinstance(entity, entities.LivingEntity) and use_entity_velocity:
             dx = entity.velocity[0]
             dy = entity.velocity[1]
         

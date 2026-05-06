@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "yapge-engine"
+version = "0.0.3"
+description = "Yet Another Python Game Engine"
+authors = [
+    {name = "ZeroKun265", email = "zerokunbusiness@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "pygame>=2.0.0"
+]

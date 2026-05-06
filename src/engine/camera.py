@@ -1,10 +1,10 @@
-from .map import World, Layer, ComplexBoundingBox
+from . import map
 import pygame
-from .entities import Entity, ComplexHitbox
+from . import entities
 from functools import singledispatchmethod
 
 class Camera:
-    def __init__(self, x: int, y: int, zoom: float = 1.0, width: int = 800, height: int = 600, world: World = World()):
+    def __init__(self, x: int, y: int, zoom: float = 1.0, width: int = 800, height: int = 600, world: map.World = map.World()):
         self.x = x
         self.y = y
         self.zoom = zoom
@@ -12,7 +12,7 @@ class Camera:
         self.height = height
         self.world = world
         self.easing = False
-        self.target: Entity | None = None
+        self.target: entities.Entity | None = None
         self.easing_speed = 0.1
         self.max_offset = 100
 
@@ -27,8 +27,8 @@ class Camera:
     def set_position(self, arg, b=None) -> None: #type: ignore
         raise TypeError("Base method called, expected an Entity or a tuple of (x, y)")
 
-    @set_position.register(Entity)
-    def _(self, entity: Entity):
+    @set_position.register(entities.Entity)
+    def _(self, entity: entities.Entity):
         self.x = entity.x
         self.y = entity.y
 
@@ -42,7 +42,7 @@ class Camera:
         self.x = x
         self.y = y
 
-    def set_target(self, entity: Entity, easing: bool = False, centered: bool = False, easing_speed: float = 0.1, max_offset: int = 100):
+    def set_target(self, entity: entities.Entity, easing: bool = False, centered: bool = False, easing_speed: float = 0.1, max_offset: int = 100):
         self.target = entity
         self.easing = easing
         self.centered = centered
@@ -79,28 +79,28 @@ class Camera:
         sorted_layers = sorted(self.world.layers, key=lambda layer: layer.z_index)
         sorted_entities = sorted(self.world.entities, key=lambda entity: entity.z_index)
         ## We merge the sorted layers and entities into a single list of renderables, sorted by z_index
-        sorted_renderables: tuple[Layer | Entity, ...] = tuple(sorted(sorted_layers + sorted_entities, key=lambda renderable: renderable.z_index))
+        sorted_renderables: tuple[map.Layer | entities.Entity, ...] = tuple(sorted(sorted_layers + sorted_entities, key=lambda renderable: renderable.z_index))
 
         for renderable in sorted_renderables:
-            if isinstance(renderable, Layer):
+            if isinstance(renderable, map.Layer):
                 self.render_layer(screen, renderable)
             else:
                 pass
                 self.render_entity(screen, renderable)
                 
     
-    def render_entity(self, screen: pygame.Surface, entity: Entity):
+    def render_entity(self, screen: pygame.Surface, entity: entities.Entity):
         screen.blit(entity.current_sprite, (entity.x - self.x, entity.y - self.y))
         # WE also go through the entity's hitboxes and draw them if they are visible
         for hitbox in entity.hitboxes.values():
-            if hitbox.visible and not isinstance(hitbox, ComplexHitbox):
+            if hitbox.visible and not isinstance(hitbox, entities.ComplexHitbox):
                 pygame.draw.rect(screen, hitbox.color, (entity.x + hitbox.rect.x - self.x, entity.y + hitbox.rect.y - self.y, hitbox.rect.width, hitbox.rect.height), 2)
-            elif hitbox.visible and isinstance(hitbox, ComplexHitbox):
+            elif hitbox.visible and isinstance(hitbox, entities.ComplexHitbox):
                 for box in hitbox.hitboxes:
                     pygame.draw.rect(screen, box.color, (entity.x + box.rect.x - self.x, entity.y + box.rect.y - self.y, box.rect.width, box.rect.height), 2)
 
 
-    def render_layer(self, screen: pygame.Surface, layer: Layer):
+    def render_layer(self, screen: pygame.Surface, layer: map.Layer):
         for y in range(layer.tilemap.height):
             for x in range(layer.tilemap.width):
                 tile = layer.tilemap.get_tile(x, y)
@@ -110,7 +110,7 @@ class Camera:
                         # In this case we check if the tile has a bounding box and if it does we draw it in red
                         if tile.bounding_box:
                             bounding_box = tile.bounding_box
-                            if isinstance(bounding_box, ComplexBoundingBox):
+                            if isinstance(bounding_box, map.ComplexBoundingBox):
                                 for box in bounding_box.bounding_boxes:
                                     pygame.draw.rect(screen, box.color, (x * tile.size + box.rect.x - self.x, y * tile.size + box.rect.y - self.y, box.rect.width, box.rect.height), 1)
                             else:

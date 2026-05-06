@@ -109,5 +109,11 @@ But with many functions that are called at various points of the loop so you can
 ## Projects
 In order to test the usability of the engine, especially at the begining of development, at some points the versions will be freezed as releases and used to develop some test apps or games, here are the list of them
 ### PONG!
-Not yet completed, needed to complete it:
-- Entity to Entity collision with custom func calling (like box)
+First ever project, for yapge version 0.0.3, it is super barebones.. more things could definitely be added but those are trivial and it's just a proof of concept after all
+To test it out:
+- Download the package with version 0.0.3 and copy the code in `demos/pong`, make sure to bring any assets as well, the entire folder is needed, and note also that some paths may need to be changed 
+- Clone the repo on the last commit of 0.0.3 (theoretically any commit nearby commit is fine, but i don't garantee backwards compatibility) and run `python -m demos.pong.main` in the root folder
+
+
+## Dependencies
+The dependencies are whatever i had installed at the time of starting the project and may change in the future, i don't really do much testing on multiple past versions to see if everything works
