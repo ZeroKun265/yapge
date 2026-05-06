@@ -1,6 +1,6 @@
 from .map import World, Layer, ComplexBoundingBox
 import pygame
-from .entities import Entity
+from .entities import Entity, ComplexHitbox
 from functools import singledispatchmethod
 
 class Camera:
@@ -91,6 +91,13 @@ class Camera:
     
     def render_entity(self, screen: pygame.Surface, entity: Entity):
         screen.blit(entity.current_sprite, (entity.x - self.x, entity.y - self.y))
+        # WE also go through the entity's hitboxes and draw them if they are visible
+        for hitbox in entity.hitboxes.values():
+            if hitbox.visible and not isinstance(hitbox, ComplexHitbox):
+                pygame.draw.rect(screen, hitbox.color, (entity.x + hitbox.rect.x - self.x, entity.y + hitbox.rect.y - self.y, hitbox.rect.width, hitbox.rect.height), 2)
+            elif hitbox.visible and isinstance(hitbox, ComplexHitbox):
+                for box in hitbox.hitboxes:
+                    pygame.draw.rect(screen, box.color, (entity.x + box.rect.x - self.x, entity.y + box.rect.y - self.y, box.rect.width, box.rect.height), 2)
 
 
     def render_layer(self, screen: pygame.Surface, layer: Layer):

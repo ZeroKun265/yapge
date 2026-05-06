@@ -1,5 +1,5 @@
 import pygame
-from typing import Callable
+from typing import Callable, Any
 from .entities import Entity, LivingEntity
 
 class SimpleBoundingBox:
@@ -17,24 +17,24 @@ class SimpleBoundingBox:
         self.collide_function = func
 
     def check_collision(self, entity: Entity, tile: 'Tile', tile_position: tuple[int, int] = (0, 0), move_type:str = "hor"):
-        entity_rect = pygame.Rect(entity.x, entity.y, entity.width, entity.height)
         new_self_rect = self.rect.move(tile_position[0] * tile.size, tile_position[1] * tile.size)
-        velocity = getattr(entity, 'velocity', (0, 0))
-        if entity_rect.colliderect(new_self_rect):
+        collided, hitbox = entity.is_colliding_with_tile_rect(new_self_rect)
+        if collided and hitbox:
+            velocity = getattr(entity, 'velocity', (0, 0))
             if self.collide_function:
                 self.collide_function(entity, tile, move_type, tile_position, self)
                 
             if move_type=="hor":
-                if velocity[0] > 0:
-                    entity.x = new_self_rect.left - entity.width
-                elif velocity[0] < 0:
-                    entity.x = new_self_rect.right
+                if velocity[0] > 0: # Moving right
+                    entity.x = new_self_rect.left - hitbox.rect.x - hitbox.rect.width
+                elif velocity[0] < 0: # Moving left
+                    entity.x = new_self_rect.right - hitbox.rect.x
                 return True
             elif move_type=="ver":
-                if velocity[1] > 0:
-                    entity.y = new_self_rect.top - entity.height
-                elif velocity[1] < 0:
-                    entity.y = new_self_rect.bottom
+                if velocity[1] > 0: # Moving down
+                    entity.y = new_self_rect.top - hitbox.rect.y - hitbox.rect.height
+                elif velocity[1] < 0: # Moving up
+                    entity.y = new_self_rect.bottom - hitbox.rect.y
                 return True
         return False
 
@@ -46,7 +46,9 @@ class ComplexBoundingBox(SimpleBoundingBox):
         for box in self.bounding_boxes:
             if box.check_collision(entity, tile, tile_position, move_type):
                 return True
-        return False        
+        return False
+
+        
 
 
 class Tile:
@@ -187,6 +189,18 @@ class TileMapGenerator: # this could have probably been a function instead of a 
                             final_boxes.append(SimpleBoundingBox(int(float(x)*size) , int(float(y)*size), int(float(w)*size), int(float(h)*size), id=int(id), color=bb_color))
                         
                         bounding_box = ComplexBoundingBox(final_boxes)
+                    case "complex_px":
+                        _, symbol, _, boxes = split_line[0:4]
+                        final_boxes: list[SimpleBoundingBox] = []
+                        complex_boxes = boxes.split("-")
+                        for i in range(len(complex_boxes)):
+                            box = complex_boxes[i]
+                            id, params = box.split(":")
+                            x, y, w, h = params.strip("()").split(",")
+                            final_boxes.append(SimpleBoundingBox(int(x) , int(y), int(w), int(h), id=int(id), color=bb_color))
+                        
+                        bounding_box = ComplexBoundingBox(final_boxes)
+
                     case _:
                         bounding_box = SimpleBoundingBox(0, 0, 0, 0)
                         print(f"Unknown bounding box type: {box_type}")
@@ -220,23 +234,25 @@ class World:
     def remove_layer(self, layer: Layer):
         self.layers.remove(layer)
     
-    def move_entity(self, entity: Entity, dx: int = 0, dy: int = 0, no_collide: bool = False, use_entity_velocity:bool = True):
+    def move_entity(self, entity: Entity, dx: int = 0, dy: int = 0, no_collide: bool = False, use_entity_velocity:bool = True) -> None:
         if isinstance(entity, LivingEntity) and use_entity_velocity:
             dx = entity.velocity[0]
             dy = entity.velocity[1]
         
         if no_collide:
             entity.pvt_move(dx, dy)
-            return
+            
         else:
             # We move along the x, if the player rect and one tile rect intersect we set them side by side based on speed
             entity.pvt_move(dx, 0)
+            # We check if we have any collisions with the world
             for layer in self.layers:
                 for y in range(layer.tilemap.height):
                     for x in range(layer.tilemap.width):
                         tile = layer.tilemap.get_tile(x, y)
                         if tile and tile.bounding_box:
                             tile.bounding_box.check_collision(entity, tile, (x, y), move_type="hor")
+            
                             
                             
             # We then move along the y and do the same thing
@@ -248,3 +264,9 @@ class World:
                         if tile and tile.bounding_box: 
                             tile.bounding_box.check_collision(entity, tile, (x, y), move_type="ver")
                         
+
+            ## Now we can check for entity collisions:
+            for other in self.entities:
+                if other is entity:
+                    continue
+                entity_collisions = entity.check_entity_collision(other)

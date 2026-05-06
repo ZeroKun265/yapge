@@ -7,7 +7,7 @@ TILE S=T T=table C=123,12,45 S=32 W=2 H=1
 BOUNDINGBOX - full_rect
 BOUNDINGBOX A top_half
 BOUNDINGBOX ^ simple 0.2 0.2 0.6 0.6
-BOUNDINGBOX T complex 1:(0,0,0.275,1)-2:(0,0,2,0.2)-3:(1.8,0,0.2,1)
+BOUNDINGBOX T complex_px 1:(0,0,4,32)-2:(0,0,64,4)-3:(60,0,4,32)
 ----------------
 -66666666666666-
 -66666666666666-

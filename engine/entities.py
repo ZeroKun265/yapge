@@ -1,10 +1,89 @@
-from typing import Any
-
-from .inventory import Item
+from typing import Any, Callable
 import pygame
 
+
+class SimpleHitbox:
+    def __init__(self, x: int, y: int, width: int, height: int, collide_function: Callable[..., None] | None = None, color: tuple[int, int, int] = (255, 0, 0)):
+        self.collide_function = collide_function
+        self.x = x
+        self.y = y
+        self.rect = pygame.Rect(x, y, width, height)
+        self.visible = False
+        self.color = color
+        
+    def check_collision_with_rect(self, parent: Entity, rect: pygame.Rect) -> tuple[bool, SimpleHitbox]:
+        # We move the hitbox by the parent's position and then check if it collides with the given rect
+        new_self_rect = pygame.Rect(self.x + parent.x, self.y + parent.y, self.rect.width, self.rect.height)
+        if new_self_rect.colliderect(rect):
+            return True, self
+        return False, self
+    
+    def set_color(self, color: tuple[int, int, int]):
+        self.color = color
+    
+    def set_collide_function(self, func: Callable[..., None]):
+        self.collide_function = func
+
+    def set_visible(self, visible: bool):
+        self.visible = visible
+
+    def check_collision_with_hitbox(self, parent: Entity, other_entity: Entity, other_hitbox: SimpleHitbox) -> bool:
+        # We move the hitbox by the parent's position and then check if it collides with the other hitbox (also moved by the other entity's position)
+        if not isinstance(other_hitbox, ComplexHitbox):
+            new_other_rect = pygame.Rect(other_hitbox.x + other_entity.x, other_hitbox.y + other_entity.y, other_hitbox.rect.width, other_hitbox.rect.height)
+       
+            new_self_rect = pygame.Rect(self.x + parent.x, self.y + parent.y, self.rect.width, self.rect.height)    
+            if new_self_rect.colliderect(new_other_rect):
+                if self.collide_function:
+                    self.collide_function(parent, other_entity, self)
+                return True
+            return False
+        else:
+            collided = other_hitbox.check_collision_with_hitbox(other_entity, parent, self)
+            if collided and self.collide_function:
+                self.collide_function(parent, other_entity, self)
+            return collided
+
+class ComplexHitbox(SimpleHitbox):
+    def __init__(self, hitboxes: list[SimpleHitbox], collide_function: Callable[..., None] | None = None, color: tuple[int, int, int] = (255, 0, 0)):
+        self.hitboxes = hitboxes
+        self.collide_function = collide_function
+        self.visible = False
+        self.color = color
+
+    def set_color(self, color: tuple[int, int, int]):
+        self.color = color
+        for hitbox in self.hitboxes:
+            hitbox.set_color(color)
+
+    def check_collision_with_hitbox(self, parent: Entity, other_entity: Entity, other_hitbox: SimpleHitbox) -> bool:
+        for hitbox in self.hitboxes:
+            if hitbox.check_collision_with_hitbox(parent, other_entity, other_hitbox):
+                if self.collide_function:
+                    self.collide_function(parent, other_entity, self)
+                return True
+        return False
+
+    def set_visible(self, visible: bool):
+        self.visible = visible
+        for hitbox in self.hitboxes:
+            hitbox.set_visible(visible)
+    
+    def set_collide_function(self, func: Callable[..., None]):
+        self.collide_function = func
+
+    def check_collision_with_rect(self, parent: Entity, rect: pygame.Rect) -> tuple[bool, SimpleHitbox]:
+        for hitbox in self.hitboxes:
+            collided, hb = hitbox.check_collision_with_rect(parent, rect)
+            if collided:
+                if self.collide_function:
+                    self.collide_function(parent, None, "entity", (0, 0), hb)
+                return True, hb
+        return False, self
+        
+
 class Entity:
-    def __init__(self, name: str, x: int, y: int, z_index: int = 0, width: int = 32, height: int = 32):
+    def __init__(self, name: str, x: int, y: int, z_index: int = 0, width: int = 32, height: int = 32, collider_name: str = "collider"):
         self.name = name
         self.x = x
         self.y = y
@@ -14,8 +93,46 @@ class Entity:
         self.current_sprite = pygame.Surface((width, height))
         self.current_sprite.fill((255, 0, 255))
         self.metadata: dict[str, Any] = {}
+        self.hitboxes: dict[str, SimpleHitbox] = {}
+        self.collider_name = "collider"
 
+    def set_collider_name(self, name: str):
+        self.collider_name = name
+
+    def set_hitbox(self, name: str, hitbox: SimpleHitbox) -> None:
+        self.hitboxes[name] = hitbox
     
+    def clear_hitboxes(self) -> None:
+        self.hitboxes.clear()
+
+    def remove_hitbox(self, name: str) -> None:
+        if name in self.hitboxes:
+            del self.hitboxes[name]
+    
+    def is_colliding_with_tile_rect(self, rect: pygame.Rect) -> tuple[bool, SimpleHitbox | None]:
+        for key, hitbox in self.hitboxes.items():
+            if key != self.collider_name:
+                continue
+            collided, hb = hitbox.check_collision_with_rect(self, rect)
+            if collided:
+                return (collided, hb)
+        return (False, None)
+
+    def check_entity_collision(self, other: Entity) -> list[str]:
+        # Entity collisions happen only if the entities have same hitbox keys and we return a list containing what keys (in common) have collisions
+        # So if entity A has hitboxes "main", "area" and "damage" and entity B has hitboxes "main", "area" and "collider"
+        # The result will be ["main", "area"]
+        # Those hitboxes can be simple or complex, and their collide function is called
+        # For complex hitboxes, both the complex funcion and the individual simple hitboxes' ones are called
+        common_hitbox_keys = set(self.hitboxes.keys()) & set(other.hitboxes.keys())
+        final_collisions: list[str] = []
+        for key in common_hitbox_keys:
+            entity_hitbox = self.hitboxes[key]
+            other_hitbox = other.hitboxes[key]
+            if entity_hitbox.check_collision_with_hitbox(self, other, other_hitbox):
+                final_collisions.append(key)
+
+        return final_collisions
 
     def __repr__(self):
         return f"Entity({self.name}, {self.x}, {self.y}))"
@@ -26,6 +143,7 @@ class Entity:
     def pvt_move(self, dx: int, dy: int):
         self.x += dx
         self.y += dy
+    
 
 class LivingEntity(Entity):
     def __init__(self, name: str, x: int, y: int, z_index: int, width: int = 32, height: int = 32, health: int = 100):
@@ -38,9 +156,8 @@ class LivingEntity(Entity):
     
 
 class Player(LivingEntity):
-    def __init__(self, name: str, x: int, y: int, z_index: int, width: int = 32, height: int = 32, health: int = 100, inventory: list[Item] = []):
+    def __init__(self, name: str, x: int, y: int, z_index: int, width: int = 32, height: int = 32, health: int = 100):
         super().__init__(name, x, y, z_index, width, height, health)
-        self.inventory = inventory
         self.sprite_up = pygame.Surface((width, height))
         self.sprite_down = pygame.Surface((width, height))
         self.sprite_left = pygame.Surface((width, height))
